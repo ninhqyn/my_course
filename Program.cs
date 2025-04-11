@@ -77,11 +77,11 @@ var app = builder.Build();
     app.UseSwagger();
     app.UseSwaggerUI();
 
-
+app.UseCors("AllowAllOrigins");
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.UseCors("AllowAllOrigins");
+
 app.Run();

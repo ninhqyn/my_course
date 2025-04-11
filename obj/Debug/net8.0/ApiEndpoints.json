@@ -532,6 +532,22 @@
   },
   {
     "ContainingType": "MyCourse.Controllers.InstructorController",
+    "Method": "GetInstructorById",
+    "RelativePath": "api/Instructor/{instructorId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "instructorId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "MyCourse.Controllers.InstructorController",
     "Method": "GetInstructorsByCourseId",
     "RelativePath": "api/Instructor/course/{courseId}",
     "HttpMethod": "GET",
@@ -589,6 +605,32 @@
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.List\u00601[[MyCourse.Model.LessonModel, MyCourse, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "MyCourse.Controllers.LessonController",
+    "Method": "CreateOrUpdateProgress",
+    "RelativePath": "api/Lesson/progress",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "MyCourse.Model.CreateProgressModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "MyCourse.Model.LessonProgressModel",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -816,5 +858,57 @@
         "StatusCode": 200
       }
     ]
+  },
+  {
+    "ContainingType": "PaymentGateway.Controllers.VnPayController",
+    "Method": "CreateVnPayPaymentUrl",
+    "RelativePath": "api/VnPay/create-payment",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "MyCourse.Model.VnPayRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PaymentGateway.Controllers.VnPayController",
+    "Method": "ProcessIpn",
+    "RelativePath": "api/VnPay/ipn",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PaymentGateway.Controllers.VnPayController",
+    "Method": "PaymentReturn",
+    "RelativePath": "api/VnPay/payment-return",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "MyCourse.Controllers.HomeController",
+    "Method": "Bridge",
+    "RelativePath": "bridge",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "vnpayData",
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[System.Collections.Generic.KeyValuePair\u00602[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]], System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
   }
 ]

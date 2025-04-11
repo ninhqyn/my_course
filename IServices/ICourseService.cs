@@ -19,6 +19,8 @@ namespace MyCourse.IServices
         Task<List<CourseModel>> GetAllCourseByFilter(string keyword, int categoryId, int instructorId, int page, int pageSize);
 
         Task<List<UserCourse>> GetAllCourseByUserId(int userId);
+
+        Task<List<CourseModel>> GetAllCourseByInstructorId(int instructorId);
      
     }
 }

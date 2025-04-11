@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MyCourse.IServices;
 using MyCourse.Model;
@@ -51,6 +52,32 @@ namespace MyCourse.Controllers
                 }
 
                 return Ok(lesson);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.Message}");
+            }
+        }
+
+        [HttpPost("progress")]
+        [Authorize]
+        public async Task<ActionResult<LessonProgressModel>> CreateOrUpdateProgress(CreateProgressModel model)
+        {
+            try
+            {
+                var userId = TokenHelper.GetUserIdFromToken(Request.Headers["Authorization"].ToString()?.Replace("Bearer ", ""));
+                if (userId == 0)
+                {
+                    return Unauthorized(new { message = "Invalid token" });
+                }
+
+                if (model == null)
+                {
+                    return BadRequest("Invalid progress data.");
+                }
+
+                var result = await _lessonService.CreateOrUpdateLessonProgressAsync(userId, model);
+                return Ok(result);
             }
             catch (Exception ex)
             {

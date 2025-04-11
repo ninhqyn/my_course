@@ -936,6 +936,30 @@
         }
       }
     },
+    "/bridge": {
+      "get": {
+        "tags": [
+          "Home"
+        ],
+        "parameters": [
+          {
+            "name": "vnpayData",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/StringStringKeyValuePair"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/Instructor/course/{courseId}": {
       "get": {
         "tags": [
@@ -944,6 +968,29 @@
         "parameters": [
           {
             "name": "courseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Instructor/{instructorId}": {
+      "get": {
+        "tags": [
+          "Instructor"
+        ],
+        "parameters": [
+          {
+            "name": "instructorId",
             "in": "path",
             "required": true,
             "schema": {
@@ -1041,6 +1088,54 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/LessonModel"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Lesson/progress": {
+      "post": {
+        "tags": [
+          "Lesson"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProgressModel"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProgressModel"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProgressModel"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonProgressModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonProgressModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonProgressModel"
                 }
               }
             }
@@ -1436,6 +1531,61 @@
           }
         }
       }
+    },
+    "/api/VnPay/create-payment": {
+      "post": {
+        "tags": [
+          "VnPay"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VnPayRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VnPayRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/VnPayRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/VnPay/payment-return": {
+      "get": {
+        "tags": [
+          "VnPay"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/VnPay/ipn": {
+      "post": {
+        "tags": [
+          "VnPay"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1544,6 +1694,34 @@
         },
         "additionalProperties": false
       },
+      "CreateProgressModel": {
+        "type": "object",
+        "properties": {
+          "lessonId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "courseId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "isCompleted": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "lastPositionSeconds": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "timeSpentMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "LessonModel": {
         "type": "object",
         "properties": {
@@ -1578,6 +1756,52 @@
           },
           "isPreview": {
             "type": "boolean",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "LessonProgressModel": {
+        "type": "object",
+        "properties": {
+          "progressId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lesson": {
+            "$ref": "#/components/schemas/LessonModel"
+          },
+          "userId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "isCompleted": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "lastPositionSeconds": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "timeSpentMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "completionDate": {
+            "type": "string",
+            "format": "date-time",
             "nullable": true
           },
           "createdAt": {
@@ -1723,6 +1947,20 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "StringStringKeyValuePair": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "nullable": true
+          },
+          "value": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -1956,6 +2194,40 @@
         "type": "object",
         "properties": {
           "accessToken": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "VnPayRequest": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string",
+            "nullable": true
+          },
+          "amount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "orderDescription": {
+            "type": "string",
+            "nullable": true
+          },
+          "bankCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "language": {
+            "type": "string",
+            "nullable": true
+          },
+          "orderType": {
+            "type": "string",
+            "nullable": true
+          },
+          "returnUrl": {
             "type": "string",
             "nullable": true
           }

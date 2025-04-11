@@ -39,10 +39,9 @@ namespace MyCourse.Services
                 .ToListAsync();
 
             // Create a dictionary for quick lookup of lesson completion status
-            var completionStatus = lessonProgress.ToDictionary(
-                lp => lp.LessonId,
-                lp => lp.IsCompleted ?? false
-            );
+            var completionStatus = lessonProgress
+    .GroupBy(lp => lp.LessonId)
+    .ToDictionary(g => g.Key, g => g.First().IsCompleted ?? false);
 
             // Map to UserModule list with completion status
             var userModules = new List<UserModule>();

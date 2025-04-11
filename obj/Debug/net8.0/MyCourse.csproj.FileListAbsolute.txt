@@ -147,3 +147,4 @@ C:\Users\Lenovo\source\repos\MyCourse\MyCourse\obj\Debug\net8.0\ref\MyCourse.dll
 C:\Users\Lenovo\source\repos\MyCourse\MyCourse\bin\Debug\net8.0\AutoMapper.dll
 C:\Users\Lenovo\source\repos\MyCourse\MyCourse\bin\Debug\net8.0\AutoMapper.Extensions.Microsoft.DependencyInjection.dll
 C:\Users\Lenovo\source\repos\MyCourse\MyCourse\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+C:\Users\Lenovo\source\repos\MyCourse\MyCourse\obj\Debug\net8.0\MyCourse.sourcelink.json

@@ -177,6 +177,9 @@ namespace MyCourse.Services
             return _mapper.Map<List<UserCourse>>(enrollments);
         }
 
-       
+        public Task<List<CourseModel>> GetAllCourseByInstructorId(int instructorId)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

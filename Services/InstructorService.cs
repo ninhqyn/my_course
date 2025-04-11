@@ -35,5 +35,14 @@ namespace MyCourse.Services
 
             return instructorModels;
         }
+
+        public async Task<InstructorModel> GetInstructorByIdAsync(int instructorId)
+        {
+            var instructor = await _context.Instructors.FindAsync(instructorId);
+            if (instructor != null) {
+                return _mapper.Map<InstructorModel>(instructor);
+            }
+            return null;
+        }
     }
 }
