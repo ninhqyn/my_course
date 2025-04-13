@@ -148,3 +148,9 @@ C:\Users\Lenovo\source\repos\MyCourse\MyCourse\bin\Debug\net8.0\AutoMapper.dll
 C:\Users\Lenovo\source\repos\MyCourse\MyCourse\bin\Debug\net8.0\AutoMapper.Extensions.Microsoft.DependencyInjection.dll
 C:\Users\Lenovo\source\repos\MyCourse\MyCourse\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
 C:\Users\Lenovo\source\repos\MyCourse\MyCourse\obj\Debug\net8.0\MyCourse.sourcelink.json
+C:\Users\Lenovo\source\repos\MyCourse\MyCourse\bin\Debug\net8.0\BCrypt.Net-Next.dll
+C:\Users\Lenovo\source\repos\MyCourse\MyCourse\bin\Debug\net8.0\BouncyCastle.Cryptography.dll
+C:\Users\Lenovo\source\repos\MyCourse\MyCourse\bin\Debug\net8.0\MailKit.dll
+C:\Users\Lenovo\source\repos\MyCourse\MyCourse\bin\Debug\net8.0\MimeKit.dll
+C:\Users\Lenovo\source\repos\MyCourse\MyCourse\bin\Debug\net8.0\System.Security.Cryptography.Pkcs.dll
+C:\Users\Lenovo\source\repos\MyCourse\MyCourse\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Security.Cryptography.Pkcs.dll

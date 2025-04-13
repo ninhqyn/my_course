@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using MyCourse.IServices;
 using MyCourse.Model;
 
@@ -46,6 +47,39 @@ namespace MyCourse.Controllers
             }
             catch (Exception ex)
             {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        // POST: api/Quiz/quiz-result
+        [HttpPost("quiz-result")]
+        [Authorize]
+        public async Task<IActionResult> AddQuizResult([FromBody] QuizResultRequest quizResultRequest)
+        {
+            try
+            {
+                var userId = TokenHelper.GetUserIdFromToken(Request.Headers["Authorization"].ToString()?.Replace("Bearer ", ""));
+
+                if (userId == 0)
+                {
+                    return Unauthorized(new { message = "Token không hợp lệ" });
+                }
+                quizResultRequest.UserId = userId;
+                var result = await _quizService.AddQuizResult(quizResultRequest);
+                if (result.Success)
+                {
+                
+                    return Ok(result);
+                }
+                else
+                {
+                
+                    return BadRequest(result);
+                }
+            }
+            catch (Exception ex)
+            {
+              
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }

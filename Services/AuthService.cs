@@ -1,6 +1,7 @@
 ﻿
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 using MyCourse.Data;
 using MyCourse.IServices;
@@ -25,11 +26,14 @@ namespace MyCourse.Services
     {
         private readonly MyCourseContext _context;
         private readonly IConfiguration _configuration;
-
-        public AuthService(MyCourseContext context, IConfiguration configuration)
-        {
+        private readonly IEmailSender _emailSender;
+        private readonly IMemoryCache _memoryCache;
+        public AuthService(MyCourseContext context, IConfiguration configuration,IEmailSender emailSender, IMemoryCache memoryCache)
+        {   
             _context = context;
             _configuration = configuration;
+            _emailSender = emailSender;
+            _memoryCache = memoryCache;
         }
 
         public async Task<AuthResult> SignInAsync(SignInModel model)
@@ -128,8 +132,6 @@ namespace MyCourse.Services
             // Generate a secure refresh token 
             return Convert.ToBase64String(Guid.NewGuid().ToByteArray());
         }
-
-
 
 
         public async Task<AuthResult> RefreshToken(TokenModel model)
@@ -287,6 +289,106 @@ namespace MyCourse.Services
                     Message = $"Error verifying token: {ex.Message}"
                 };
             }
+        }
+        private async Task SendVerificationEmail(string email, string verificationCode)
+        {
+            try
+            {
+                await _emailSender.SendVerificationCode(email, verificationCode);
+            }
+            catch (Exception ex)
+            {
+                // Log lỗi và xử lý
+                Console.WriteLine($"Error sending email: {ex.Message}");
+                throw;
+            }
+        }
+        private string GenerateRandomVerificationCode()
+        {
+            var random = new Random();
+            return random.Next(100000, 999999).ToString(); // Generates a 6-digit code
+        }
+
+        public async Task<bool> SignUpAsync(SignUpModel model)
+        {
+            var existingUser = await _context.Users
+                .FirstOrDefaultAsync(u => u.Email == model.Email || u.DisplayName == model.UserName);
+
+            if (existingUser == null)
+            {
+                var verificationCode = GenerateRandomVerificationCode();
+
+                // Lưu tạm thông tin người dùng vào memory cache
+                var cacheKey = $"verification_{model.Email}";
+                _memoryCache.Set(cacheKey, (verificationCode, DateTime.UtcNow.AddMinutes(5), model));
+
+                Console.WriteLine($"Stored verification code for {model.Email}: {verificationCode}");
+
+                // Gửi email xác thực
+                await SendVerificationEmail(model.Email, verificationCode);
+                return true;
+            }
+
+            return false;
+        }
+
+        public async Task<bool> VerifyCodeAsync(string email, string code)
+        {
+            Console.WriteLine("input code:" + code);
+            var cacheKey = $"verification_{email}";
+
+            // Kiểm tra mã trong memory cache
+            if (_memoryCache.TryGetValue(cacheKey, out (string VerificationCode, DateTime Expiry, SignUpModel Model) value))
+            {
+                Console.WriteLine("input send:" + value.VerificationCode);
+                // Kiểm tra mã và thời gian hết hạn
+                if (value.VerificationCode == code && DateTime.UtcNow <= value.Expiry)
+                {
+                    var model = value.Model;
+                    // Tạo người dùng trong cơ sở dữ liệu
+                    //var hashedPassword = BCrypt.Net.BCrypt.HashPassword(model.Password);
+                    var user = new User
+                    {
+                        DisplayName = model.UserName,
+                        PasswordHash = model.Password,
+                        Email = email,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
+                        
+                    };
+
+                    await _context.AddAsync(user);
+                    var result = await _context.SaveChangesAsync();
+                    Console.WriteLine($"Saved {result} changes");
+                    // Xóa khỏi cache sau khi đăng ký thành công
+                    _memoryCache.Remove(cacheKey);
+                    return true;
+                }
+            }
+
+            return false; // Mã xác thực không hợp lệ hoặc đã hết hạn
+        }
+        public async Task<bool> ResendVerificationCodeAsync(string email)
+        {
+            var cacheKey = $"verification_{email}";
+            if (_memoryCache.TryGetValue(cacheKey, out (string VerificationCode, DateTime Expiry, SignUpModel Model) value))
+            {
+                var newVerificationCode = GenerateRandomVerificationCode();
+                var newExpiry = DateTime.UtcNow.AddMinutes(5);
+
+                // Cập nhật mã xác thực và thời gian hết hạn
+                _memoryCache.Set(cacheKey, (newVerificationCode, DateTime.UtcNow.AddMinutes(5), value.Model));
+
+                // Gửi mã xác thực mới qua email
+                await SendVerificationEmail(email, newVerificationCode);
+                return true;
+            }
+
+            return false; // Email không tồn tại trong danh sách chờ
+        }
+        public Task<bool> ForgotPasswordAsync(string email)
+        {
+            throw new NotImplementedException();
         }
     }
 

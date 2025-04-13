@@ -9,6 +9,6 @@
         public string Language { get; set; } // Ngôn ngữ hiển thị (vn, en)
         public string OrderType { get; set; } // Loại hàng hóa
 
-        public string ReturnUrl { get; set; }
+        public int CourseId { get; set; }
     }
 }

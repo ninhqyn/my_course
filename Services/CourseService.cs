@@ -177,9 +177,51 @@ namespace MyCourse.Services
             return _mapper.Map<List<UserCourse>>(enrollments);
         }
 
-        public Task<List<CourseModel>> GetAllCourseByInstructorId(int instructorId)
+        public async Task<List<CourseModel>> GetAllCourseByInstructorId(int instructorId)
         {
-            throw new NotImplementedException();
+            try
+            {
+                // Validate parameter
+                if (instructorId <= 0)
+                {
+                    throw new ArgumentException("InstructorId không hợp lệ");
+                }
+
+                // Query courses through CourseInstructor table
+                var courses = await _context.CourseInstructors
+                    .Include(c => c.Course)
+                    .ThenInclude(ca=>ca.Category)
+                    .Where(ci => ci.InstructorId == instructorId)
+                    .Select(ci => ci.Course)
+                    .Where(c => c.IsActive == true)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .ToListAsync();
+
+                // Map to CourseModel
+                var courseModels = _mapper.Map<List<CourseModel>>(courses);
+
+                return courseModels;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Lỗi khi lấy danh sách khóa học của instructor: {ex.Message}");
+            }
         }
+
+
+
+
+        public async Task<bool> IsEnrollmentCourse(int userId, int courseId)
+        {
+         
+            var enrollment = await _context.Enrollments
+                .FirstOrDefaultAsync(e =>
+                    e.UserId == userId &&
+                    e.CourseId == courseId &&
+                    e.IsActive == true);
+            return enrollment != null;
+        }
+
     }
+
 }

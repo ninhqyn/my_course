@@ -180,7 +180,64 @@ namespace MyCourse.Controllers
             return Ok(courses);
         }
 
-       
+        // GET: api/Course/instructor/{instructorId}
+        [HttpGet("instructor/{instructorId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<IEnumerable<CourseModel>>> GetCoursesByInstructorId(int instructorId)
+        {
+            try
+            {
+                var courses = await _courseService.GetAllCourseByInstructorId(instructorId);
+                if (courses == null || courses.Count == 0)
+                {
+                    return NotFound(new { message = "Không tìm thấy khóa học nào của giảng viên này" });
+                }
+                return Ok(courses);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        // GET: api/Course/check-enrollment/{courseId}
+        [HttpGet("check-enrollment/{courseId}")]
+        [Authorize] // Yêu cầu người dùng phải đăng nhập
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<bool>> CheckEnrollment(int courseId)
+        {
+            try
+            {
+                // Lấy userId từ token
+                var userId = TokenHelper.GetUserIdFromToken(Request.Headers["Authorization"].ToString()?.Replace("Bearer ", ""));
+
+                if (userId == 0)
+                {
+                    return Unauthorized(new { message = "Token không hợp lệ" });
+                }
+
+                // Kiểm tra đăng ký
+                var isEnrolled = await _courseService.IsEnrollmentCourse(userId, courseId);
+
+                return Ok(new
+                {
+                    isEnrolled = isEnrolled,
+                    message = isEnrolled ? "Người dùng đã đăng ký khóa học này" : "Người dùng chưa đăng ký khóa học này"
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+
+
+
+
 
 
 

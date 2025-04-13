@@ -6,5 +6,7 @@ namespace MyCourse.IServices
     {
         Task<List<QuizModel>> GetQuizByCourseIdAsync(int courseId);
         Task<QuizModel> GetQuizByIdAsync(int quizId);
+
+        Task<QuizResultModel> AddQuizResult(QuizResultRequest quizResultRequest);
     }
 }

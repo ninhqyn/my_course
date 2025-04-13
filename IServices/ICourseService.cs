@@ -21,6 +21,8 @@ namespace MyCourse.IServices
         Task<List<UserCourse>> GetAllCourseByUserId(int userId);
 
         Task<List<CourseModel>> GetAllCourseByInstructorId(int instructorId);
+
+        Task<bool> IsEnrollmentCourse(int userId, int courseId);
      
     }
 }
