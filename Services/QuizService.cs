@@ -83,6 +83,7 @@ namespace MyCourse.Services
                     UserId = quizResultRequest.UserId,
                     Score = scorePercentage,
                     Passed = passed,
+                    TimeSpentMinutes = quizResultRequest.TimeSpentMinutes,
                     AttemptNumber = attemptNumber,
                     SubmissionDate = DateTime.UtcNow,
                     CreatedAt = DateTime.UtcNow
@@ -114,6 +115,74 @@ namespace MyCourse.Services
                     Success = false,
                     Message = $"An error occurred: {ex.Message}"
                 };
+            }
+        }
+
+        public async Task<List<QuizResultModel>> GetAllQuizResultByQuizIdAndUserId(int quizId, int userId)
+        {
+            try
+            {
+                // Lấy tất cả kết quả bài kiểm tra của người dùng cho quiz đã cho
+                var quizResults = await _context.QuizResults
+                    .Where(r => r.QuizId == quizId && r.UserId == userId)
+                    .OrderByDescending(r => r.SubmissionDate) // Sắp xếp theo thời gian nộp từ mới đến cũ
+                    .ToListAsync();
+
+                if (!quizResults.Any())
+                {
+                    // Trả về danh sách rỗng nếu không có kết quả nào
+                    return new List<QuizResultModel>();
+                }
+
+                // Lấy thông tin về quiz để có số lượng câu hỏi
+                var quiz = await _context.Quizzes
+                    .Where(q => q.QuizId == quizId)
+                    .Include(q => q.Questions)
+                    .FirstOrDefaultAsync();
+
+                int totalQuestions = quiz?.Questions.Count ?? 0;
+
+                // Tạo danh sách kết quả
+                var resultModels = new List<QuizResultModel>();
+
+                foreach (var result in quizResults)
+                {
+                    // Ước tính số câu trả lời đúng dựa trên điểm số
+                    int estimatedCorrectAnswers = totalQuestions > 0
+                        ? (int)Math.Round(totalQuestions * (result.Score / 100m))
+                        : 0;
+
+                    // Tạo và thêm mô hình kết quả vào danh sách
+                    resultModels.Add(new QuizResultModel
+                    {
+                        ResultId = result.ResultId,
+                        Score = result.Score,
+                        Passed = result.Passed ?? false,
+                        TotalQuestions = totalQuestions,
+                        CorrectAnswers = estimatedCorrectAnswers,
+                        AttemptNumber = result.AttemptNumber ?? 10,
+                        SubmissionDate = result.SubmissionDate ?? DateTime.UtcNow,
+                        Success = true,
+                        Message = result.Passed == true
+                            ? "Đã vượt qua bài kiểm tra."
+                            : "Chưa vượt qua bài kiểm tra."
+                    });
+                }
+
+                return resultModels;
+            }
+            catch (Exception ex)
+            {
+                // Ghi log ngoại lệ nếu cần
+                // Trả về danh sách chứa một phần tử thông báo lỗi
+                return new List<QuizResultModel>
+        {
+            new QuizResultModel
+            {
+                Success = false,
+                Message = $"Đã xảy ra lỗi khi lấy kết quả: {ex.Message}"
+            }
+        };
             }
         }
 

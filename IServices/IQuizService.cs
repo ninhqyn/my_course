@@ -8,5 +8,7 @@ namespace MyCourse.IServices
         Task<QuizModel> GetQuizByIdAsync(int quizId);
 
         Task<QuizResultModel> AddQuizResult(QuizResultRequest quizResultRequest);
+
+        Task<List<QuizResultModel>> GetAllQuizResultByQuizIdAndUserId(int quizId, int userId);
     }
 }

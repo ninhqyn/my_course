@@ -83,5 +83,61 @@ namespace MyCourse.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+        [HttpGet("GetAll/quiz-result/{quizId}")]
+        [Authorize]
+        public async Task<IActionResult> GetAllQuizResult(int quizId)
+        {
+            try
+            {
+                // Lấy userId từ token xác thực
+                var userId = TokenHelper.GetUserIdFromToken(Request.Headers["Authorization"].ToString()?.Replace("Bearer ", ""));
+                if (userId == 0)
+                {
+                    return Unauthorized(new { message = "Token không hợp lệ" });
+                }
+
+                // Gọi service để lấy tất cả kết quả quiz
+                var results = await _quizService.GetAllQuizResultByQuizIdAndUserId(quizId, userId);
+
+                // Kiểm tra xem có lỗi trong kết quả trả về không
+                if (results != null && results.Count > 0)
+                {
+                    // Kiểm tra nếu kết quả đầu tiên có thông báo lỗi
+                    var firstResult = results.FirstOrDefault();
+                    if (firstResult != null && firstResult.Success == false)
+                    {
+                        return BadRequest(new { message = firstResult.Message });
+                    }
+
+                    // Trả về danh sách kết quả nếu không có lỗi
+                    return Ok(new
+                    {
+                        success = true,
+                        data = results,
+                        message = "Lấy danh sách kết quả quiz thành công."
+                    });
+                }
+                else
+                {
+                    // Trường hợp không có kết quả nào
+                    return Ok(new
+                    {
+                        success = true,
+                        data = results,
+                        message = "Không tìm thấy kết quả nào cho quiz này."
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                // Xử lý ngoại lệ và trả về lỗi 500
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = $"Lỗi máy chủ: {ex.Message}"
+                });
+            }
+        }
+    
     }
 }

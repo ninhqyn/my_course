@@ -887,6 +887,22 @@
   },
   {
     "ContainingType": "MyCourse.Controllers.QuizController",
+    "Method": "GetAllQuizResult",
+    "RelativePath": "api/Quiz/GetAll/quiz-result/{quizId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "quizId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "MyCourse.Controllers.QuizController",
     "Method": "AddQuizResult",
     "RelativePath": "api/Quiz/quiz-result",
     "HttpMethod": "POST",
