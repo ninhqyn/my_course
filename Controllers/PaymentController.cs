@@ -10,6 +10,8 @@ using MyCourse.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using MyCourse.IServices;
+using System.Runtime.ConstrainedExecution;
 
 namespace PaymentGateway.Controllers
 {
@@ -20,12 +22,14 @@ namespace PaymentGateway.Controllers
         private readonly IConfiguration _configuration;
         private readonly ILogger<VnPayController> _logger;
         private readonly MyCourseContext _context;
+        private readonly ICartService _cartService;
 
-        public VnPayController(IConfiguration configuration, ILogger<VnPayController> logger, MyCourseContext context)
+        public VnPayController(IConfiguration configuration, ILogger<VnPayController> logger, MyCourseContext context,ICartService cartService)
         {
             _configuration = configuration;
             _logger = logger;
             _context = context;
+            _cartService = cartService;
         }
 
         [HttpPost("create-payment")]
@@ -42,15 +46,15 @@ namespace PaymentGateway.Controllers
                 }
                 // Lấy thông tin cấu hình từ appsettings.json
                 string vnp_TmnCode = _configuration["VnPay:TmnCode"];
-                string vnp_HashSecret = _configuration["VnPay:HashSecret"]; 
-                string vnp_Url = _configuration["VnPay:PaymentUrl"];                                               
+                string vnp_HashSecret = _configuration["VnPay:HashSecret"];
+                string vnp_Url = _configuration["VnPay:PaymentUrl"];
                 string vnp_ReturnUrl = $"{Request.Scheme}://{Request.Host}/api/VnPay/payment-return";
 
                 // Tạo thời gian hiện tại và thời gian hết hạn (hiện tại + 5 phút)
                 DateTime createDate = DateTime.Now;
                 DateTime expireDate = createDate.AddMinutes(5);
 
-             
+
                 var vnp_Params = new Dictionary<string, string>
                 {
                     { "vnp_Version", "2.1.0" },
@@ -69,17 +73,21 @@ namespace PaymentGateway.Controllers
                     { "vnp_ExpireDate", expireDate.ToString("yyyyMMddHHmmss") } // Thời gian hết hạn thanh toán: 5 phút từ khi tạo
                 };
 
-                // Store course ID in session or database for later retrieval
+                // Store course IDs in session or database for later retrieval
                 // For this example, let's add it to the order info as JSON
-                string orderInfoWithCourseId = System.Text.Json.JsonSerializer.Serialize(new
+                string orderInfoWithCourseIds = System.Text.Json.JsonSerializer.Serialize(new
                 {
                     Description = request.OrderDescription,
-                    CourseId = request.CourseId,
+                    Courses = request.Courses,
                     UserId = userId
-                   
                 });
-                Console.WriteLine("user id:"+userId);
-                vnp_Params["vnp_OrderInfo"] = orderInfoWithCourseId;
+                Console.WriteLine("user id:" + userId);
+                foreach (var courseId in request.Courses)
+                {
+                    Console.WriteLine($"- Course ID: {courseId}");
+                 
+                }
+                vnp_Params["vnp_OrderInfo"] = orderInfoWithCourseIds;
 
                 // Sắp xếp các tham số theo thứ tự a-z trước khi tạo chuỗi hash
                 var sortedParams = vnp_Params.OrderBy(x => x.Key).ToDictionary(x => x.Key, x => x.Value);
@@ -179,11 +187,9 @@ namespace PaymentGateway.Controllers
                 decimal amount = decimal.Parse(amountStr);
                 string orderInfo = vnpayData.ContainsKey("vnp_OrderInfo") ? vnpayData["vnp_OrderInfo"] : string.Empty;
 
-              
-
-                // Let's use this approach:
+                // Parse order info to extract user ID and course IDs
                 int userId = 0;
-                int courseId = 0;
+                List<int> courseIds = new List<int>();
                 string description = "";
 
                 try
@@ -194,13 +200,21 @@ namespace PaymentGateway.Controllers
                     if (root.TryGetProperty("UserId", out JsonElement userIdElement) && userIdElement.ValueKind == JsonValueKind.Number)
                         userId = userIdElement.GetInt32();
 
-                    if (root.TryGetProperty("CourseId", out JsonElement courseIdElement) && courseIdElement.ValueKind == JsonValueKind.Number)
-                        courseId = courseIdElement.GetInt32();
+                    if (root.TryGetProperty("Courses", out JsonElement coursesElement) && coursesElement.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (JsonElement courseElement in coursesElement.EnumerateArray())
+                        {
+                            if (courseElement.ValueKind == JsonValueKind.Number)
+                            {
+                                courseIds.Add(courseElement.GetInt32());
+                            }
+                        }
+                    }
 
                     if (root.TryGetProperty("Description", out JsonElement descElement) && descElement.ValueKind == JsonValueKind.String)
                         description = descElement.GetString() ?? "";
 
-                    _logger.LogInformation($"Parsed order info: UserId={userId}, CourseId={courseId}");
+                    _logger.LogInformation($"Parsed order info: UserId={userId}, Courses={string.Join(",", courseIds)}");
                 }
                 catch (Exception ex)
                 {
@@ -210,13 +224,11 @@ namespace PaymentGateway.Controllers
                 // Kiểm tra kết quả giao dịch
                 bool isSuccessTransaction = vnp_ResponseCode == "00";
 
-                // Create Payment and Enrollment if transaction is successful
-                if (isValidSignature && isSuccessTransaction)
+                // Create Payment and Enrollments if transaction is successful
+                if (isValidSignature && isSuccessTransaction && courseIds.Count > 0)
                 {
                     try
                     {
-                      
-
                         // Create new payment record
                         var payment = new Payment
                         {
@@ -232,36 +244,43 @@ namespace PaymentGateway.Controllers
                         await _context.Payments.AddAsync(payment);
                         await _context.SaveChangesAsync();
 
-                        // Create payment detail
-                        var paymentDetail = new PaymentDetail
+                        // Calculate unit price per course
+                        decimal unitPrice = courseIds.Count > 0 ? amount / courseIds.Count : amount;
+
+                        foreach (var courseId in courseIds)
                         {
-                            PaymentId = payment.PaymentId,
-                            ItemType = "Course",
-                            ItemId = courseId,
-                            Quantity = 1,
-                            UnitPrice = amount,
-                            DiscountAmount = 0,
-                            Subtotal = amount,
-                            CreatedAt = DateTime.Now
-                        };
+                            // Create payment detail for each course
+                            var paymentDetail = new PaymentDetail
+                            {
+                                PaymentId = payment.PaymentId,
+                                ItemType = "Course",
+                                ItemId = courseId,
+                                Quantity = 1,
+                                UnitPrice = unitPrice,
+                                DiscountAmount = 0,
+                                Subtotal = unitPrice,
+                                CreatedAt = DateTime.Now
+                            };
 
-                        await _context.PaymentDetails.AddAsync(paymentDetail);
+                            await _context.PaymentDetails.AddAsync(paymentDetail);
 
-                        // Create enrollment
-                        var enrollment = new Enrollment
-                        {
-                            UserId = userId,
-                            CourseId = courseId,
-                            EnrollmentDate = DateTime.Now,
-                            PaymentId = payment.PaymentId,
-                            IsActive = true
-                            // Add other necessary enrollment fields
-                        };
+                            // Create enrollment for each course
+                            var enrollment = new Enrollment
+                            {
+                                UserId = userId,
+                                CourseId = courseId,
+                                EnrollmentDate = DateTime.Now,
+                                PaymentId = payment.PaymentId,
+                                IsActive = true
+                            };
 
-                        await _context.Enrollments.AddAsync(enrollment);
+                            await _context.Enrollments.AddAsync(enrollment);
+                           
+                        }
+                        var result = await _cartService.ClearCart(userId);
+
                         await _context.SaveChangesAsync();
-
-                        _logger.LogInformation($"Payment and enrollment created successfully for user {userId} for course {courseId}");
+                        _logger.LogInformation($"Payment and enrollments created successfully for user {userId} for courses {string.Join(",", courseIds)}");
                     }
                     catch (Exception ex)
                     {

@@ -45,6 +45,7 @@ namespace MyCourse.Mappings
             CreateMap<Question, QuestionModel>();
             CreateMap<Answer, AnswerModel>();
             CreateMap<LessonProgress, LessonProgressModel>();
+            CreateMap<Cart, CartModel>();
         }
     }
 }
