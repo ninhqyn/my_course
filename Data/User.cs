@@ -41,9 +41,7 @@ public partial class User
 
     public virtual ICollection<Rating> Ratings { get; set; } = new List<Rating>();
 
-    public virtual ICollection<UserAuthentication> UserAuthentications { get; set; } = new List<UserAuthentication>();
-
-    public virtual ICollection<UserDiscount> UserDiscounts { get; set; } = new List<UserDiscount>();
+  
 
     public virtual ICollection<UserToken> UserTokens { get; set; } = new List<UserToken>();
 }

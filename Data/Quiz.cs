@@ -23,6 +23,8 @@ public partial class Quiz
 
     public DateTime? UpdatedAt { get; set; }
 
+    public bool? IsFinal { get; set; }
+
     public virtual Module Module { get; set; } = null!;
 
     public virtual ICollection<Question> Questions { get; set; } = new List<Question>();

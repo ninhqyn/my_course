@@ -15,10 +15,12 @@
         public int? TimeLimitMinutes { get; set; }
 
         public int OrderIndex { get; set; }
+        public bool? IsFinal { get; set; }
 
         public DateTime? CreatedAt { get; set; }
 
         public DateTime? UpdatedAt { get; set; }
+
 
         public List<QuestionModel> Questions { get; set; } = new List<QuestionModel>();
     }

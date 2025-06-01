@@ -173,7 +173,7 @@ namespace MyCourse.Services
                 .Include(e => e.Course)
                     .ThenInclude(c => c.Category)
                 .ToListAsync();
-
+            Console.WriteLine(enrollments.Count);
             return _mapper.Map<List<UserCourse>>(enrollments);
         }
 
@@ -222,6 +222,34 @@ namespace MyCourse.Services
             return enrollment != null;
         }
 
+        public async Task<bool> EnrollmentCourseFree(int userId, int courseId)
+        {
+            //get course price
+            var course = await _context.Courses.FindAsync(courseId);
+            if (course == null)
+            {
+                return false;
+            }
+            if (course.Price == 0)
+            {
+                var enrollment = new Enrollment
+                {
+                    UserId = userId,
+                    CourseId = courseId,
+                    EnrollmentDate = DateTime.Now,
+                    IsActive = true,
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
+                };
+
+                _context.Enrollments.Add(enrollment);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            return false;
+
+        }
     }
+
 
 }

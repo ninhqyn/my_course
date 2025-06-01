@@ -9,6 +9,9 @@ namespace MyCourse.IServices
 
         Task<QuizResultModel> AddQuizResult(QuizResultRequest quizResultRequest);
 
-        Task<List<QuizResultModel>> GetAllQuizResultByQuizIdAndUserId(int quizId, int userId);
+        Task<List<QuizResultModel>> GetAllQuizResultByQuizIdAndUserId(int quizId, int userId,int page,int pageSize);
+
+        Task<bool> CanTakeFinalQuizAsync(int courseId, int userId);
+
     }
 }

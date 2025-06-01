@@ -43,7 +43,7 @@ public partial class Course
 
     public virtual ICollection<CourseSkill> CourseSkills { get; set; } = new List<CourseSkill>();
 
-    public virtual ICollection<DiscountCourse> DiscountCourses { get; set; } = new List<DiscountCourse>();
+
 
     public virtual ICollection<Enrollment> Enrollments { get; set; } = new List<Enrollment>();
 

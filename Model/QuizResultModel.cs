@@ -11,5 +11,7 @@
         public DateTime SubmissionDate { get; set; }
         public string Message { get; set; }
         public bool Success { get; set; }
+        public int? CertificateId { get; set; }
+        public bool CertificateCreated { get; set; }
     }
 }

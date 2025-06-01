@@ -235,6 +235,41 @@ namespace MyCourse.Controllers
         }
 
 
+        // POST: api/Course/enroll-free/{courseId}
+        [HttpPost("enroll-free/{courseId}")]
+        [Authorize] // Requires the user to be authenticated
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<bool>> EnrollFreeCourse(int courseId)
+        {
+            try
+            {
+                // Get user ID from the token
+                var userId = TokenHelper.GetUserIdFromToken(Request.Headers["Authorization"].ToString()?.Replace("Bearer ", ""));
+
+                if (userId == 0)
+                {
+                    return Unauthorized(new { message = "Invalid token" });
+                }
+
+                // Attempt to enroll the user in the free course
+                bool result = await _courseService.EnrollmentCourseFree(userId, courseId);
+
+                if (result)
+                {
+                    return Ok(new { message = "Enrolled in the free course successfully." });
+                }
+                else
+                {
+                    return BadRequest(new { message = "Failed to enroll in the course.  Either the course is not free, or an error occurred." }); // corrected.
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
 
 
 

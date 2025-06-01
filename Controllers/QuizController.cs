@@ -85,7 +85,7 @@ namespace MyCourse.Controllers
         }
         [HttpGet("GetAll/quiz-result/{quizId}")]
         [Authorize]
-        public async Task<IActionResult> GetAllQuizResult(int quizId)
+        public async Task<IActionResult> GetAllQuizResult(int quizId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             try
             {
@@ -97,36 +97,35 @@ namespace MyCourse.Controllers
                 }
 
                 // Gọi service để lấy tất cả kết quả quiz
-                var results = await _quizService.GetAllQuizResultByQuizIdAndUserId(quizId, userId);
+                var results = await _quizService.GetAllQuizResultByQuizIdAndUserId(quizId, userId, page, pageSize);
 
-                // Kiểm tra xem có lỗi trong kết quả trả về không
-                if (results != null && results.Count > 0)
+                // Kiểm tra xem có kết quả không
+                if (results == null || results.Count == 0)
                 {
-                    // Kiểm tra nếu kết quả đầu tiên có thông báo lỗi
-                    var firstResult = results.FirstOrDefault();
-                    if (firstResult != null && firstResult.Success == false)
-                    {
-                        return BadRequest(new { message = firstResult.Message });
-                    }
-
-                    // Trả về danh sách kết quả nếu không có lỗi
                     return Ok(new
                     {
                         success = true,
-                        data = results,
-                        message = "Lấy danh sách kết quả quiz thành công."
-                    });
-                }
-                else
-                {
-                    // Trường hợp không có kết quả nào
-                    return Ok(new
-                    {
-                        success = true,
-                        data = results,
+                        data = new List<QuizResultModel>(), // Trả về một danh sách rỗng
                         message = "Không tìm thấy kết quả nào cho quiz này."
                     });
                 }
+
+                // Trả về danh sách kết quả
+                return Ok(new
+                {
+                    success = true,
+                    data = results,
+                    message = "Lấy danh sách kết quả quiz thành công."
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                // Xử lý lỗi phân trang
+                return BadRequest(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
             }
             catch (Exception ex)
             {
@@ -138,6 +137,40 @@ namespace MyCourse.Controllers
                 });
             }
         }
-    
+        // GET: api/Quiz/can-take-final/{courseId}
+        [HttpGet("can-take-final/{courseId}")]
+        [Authorize]
+        public async Task<IActionResult> CanTakeFinalQuizAsync(int courseId)
+        {
+            try
+            {
+                // Lấy userId từ token xác thực
+                var userId = TokenHelper.GetUserIdFromToken(Request.Headers["Authorization"].ToString()?.Replace("Bearer ", ""));
+                if (userId == 0)
+                {
+                    return Unauthorized(new { message = "Token không hợp lệ" });
+                }
+
+                // Gọi service để kiểm tra điều kiện làm final quiz
+                var canTake = await _quizService.CanTakeFinalQuizAsync(courseId, userId);
+
+                return Ok(new
+                {
+                    success = true,
+                    canTakeFinalQuiz = canTake,
+                    message = canTake ? "Bạn đã đủ điều kiện làm bài kiểm tra cuối khóa." : "Bạn chưa đủ điều kiện làm bài kiểm tra cuối khóa."
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = $"Lỗi máy chủ: {ex.Message}"
+                });
+            }
+        }
+
+
     }
 }

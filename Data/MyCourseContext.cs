@@ -31,10 +31,6 @@ public partial class MyCourseContext : DbContext
 
     public virtual DbSet<CourseSkill> CourseSkills { get; set; }
 
-    public virtual DbSet<Discount> Discounts { get; set; }
-
-    public virtual DbSet<DiscountCourse> DiscountCourses { get; set; }
-
     public virtual DbSet<Enrollment> Enrollments { get; set; }
 
     public virtual DbSet<Instructor> Instructors { get; set; }
@@ -61,15 +57,11 @@ public partial class MyCourseContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
-    public virtual DbSet<UserAuthentication> UserAuthentications { get; set; }
-
-    public virtual DbSet<UserDiscount> UserDiscounts { get; set; }
-
     public virtual DbSet<UserToken> UserTokens { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Data Source=DESKTOP-2CIEIUI\\MSSQLSERVER01;Initial Catalog=MyCourse;Persist Security Info=True;User ID=sa;Password=123;Encrypt=True;Trust Server Certificate=True");
+        => optionsBuilder.UseSqlServer("Data Source=DESKTOP-2CIEIUI\\MSSQLSERVER01;Initial Catalog=MyCourse;Persist Security Info=True;User ID=sa;Password=123;Trust Server Certificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -328,78 +320,6 @@ public partial class MyCourseContext : DbContext
                 .HasConstraintName("FK__Course_Sk__skill__6BE40491");
         });
 
-        modelBuilder.Entity<Discount>(entity =>
-        {
-            entity.HasKey(e => e.DiscountId).HasName("PK__Discount__BDBE9EF9C4B667FD");
-
-            entity.ToTable("Discount");
-
-            entity.HasIndex(e => e.Code, "UQ__Discount__357D4CF974264B50").IsUnique();
-
-            entity.Property(e => e.DiscountId).HasColumnName("discount_id");
-            entity.Property(e => e.Code)
-                .HasMaxLength(50)
-                .HasColumnName("code");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime")
-                .HasColumnName("created_at");
-            entity.Property(e => e.CurrentUsage)
-                .HasDefaultValue(0)
-                .HasColumnName("current_usage");
-            entity.Property(e => e.Description)
-                .HasMaxLength(255)
-                .HasColumnName("description");
-            entity.Property(e => e.DiscountType)
-                .HasMaxLength(20)
-                .HasColumnName("discount_type");
-            entity.Property(e => e.DiscountValue)
-                .HasColumnType("decimal(10, 2)")
-                .HasColumnName("discount_value");
-            entity.Property(e => e.EndDate)
-                .HasColumnType("datetime")
-                .HasColumnName("end_date");
-            entity.Property(e => e.IsActive)
-                .HasDefaultValue(true)
-                .HasColumnName("is_active");
-            entity.Property(e => e.MinPurchaseAmount)
-                .HasDefaultValue(0m)
-                .HasColumnType("decimal(10, 2)")
-                .HasColumnName("min_purchase_amount");
-            entity.Property(e => e.StartDate)
-                .HasColumnType("datetime")
-                .HasColumnName("start_date");
-            entity.Property(e => e.UpdatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime")
-                .HasColumnName("updated_at");
-            entity.Property(e => e.UsageLimit).HasColumnName("usage_limit");
-        });
-
-        modelBuilder.Entity<DiscountCourse>(entity =>
-        {
-            entity.HasKey(e => new { e.DiscountId, e.CourseId }).HasName("PK__Discount__454F71839B3CAC24");
-
-            entity.ToTable("Discount_Course");
-
-            entity.Property(e => e.DiscountId).HasColumnName("discount_id");
-            entity.Property(e => e.CourseId).HasColumnName("course_id");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime")
-                .HasColumnName("created_at");
-
-            entity.HasOne(d => d.Course).WithMany(p => p.DiscountCourses)
-                .HasForeignKey(d => d.CourseId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Discount___cours__56E8E7AB");
-
-            entity.HasOne(d => d.Discount).WithMany(p => p.DiscountCourses)
-                .HasForeignKey(d => d.DiscountId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Discount___disco__55F4C372");
-        });
-
         modelBuilder.Entity<Enrollment>(entity =>
         {
             entity.HasKey(e => e.EnrollmentId).HasName("PK__Enrollme__6D24AA7A518463DA");
@@ -492,7 +412,11 @@ public partial class MyCourseContext : DbContext
         {
             entity.HasKey(e => e.LessonId).HasName("PK__Lesson__6421F7BE882748C8");
 
-            entity.ToTable("Lesson", tb => tb.HasTrigger("UpdateLessonCount"));
+            entity.ToTable("Lesson", tb =>
+                {
+                    tb.HasTrigger("UpdateLessonCount");
+                    tb.HasTrigger("trg_UpdateModuleTimeAfterLessonChange");
+                });
 
             entity.Property(e => e.LessonId).HasColumnName("lesson_id");
             entity.Property(e => e.Content).HasColumnName("content");
@@ -567,7 +491,7 @@ public partial class MyCourseContext : DbContext
         {
             entity.HasKey(e => e.ModuleId).HasName("PK__Module__1A2D0653B783808A");
 
-            entity.ToTable("Module");
+            entity.ToTable("Module", tb => tb.HasTrigger("trg_UpdateCourseTimeAfterModuleChange"));
 
             entity.Property(e => e.ModuleId).HasColumnName("module_id");
             entity.Property(e => e.CourseId).HasColumnName("course_id");
@@ -631,10 +555,6 @@ public partial class MyCourseContext : DbContext
                 .HasColumnType("datetime")
                 .HasColumnName("updated_at");
             entity.Property(e => e.UserId).HasColumnName("user_id");
-
-            entity.HasOne(d => d.Discount).WithMany(p => p.Payments)
-                .HasForeignKey(d => d.DiscountId)
-                .HasConstraintName("FK_Payment_Discount");
 
             entity.HasOne(d => d.User).WithMany(p => p.Payments)
                 .HasForeignKey(d => d.UserId)
@@ -719,6 +639,9 @@ public partial class MyCourseContext : DbContext
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
             entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.IsFinal)
+                .HasDefaultValue(false)
+                .HasColumnName("is_final");
             entity.Property(e => e.ModuleId).HasColumnName("module_id");
             entity.Property(e => e.OrderIndex).HasColumnName("order_index");
             entity.Property(e => e.PassingScore)
@@ -874,64 +797,6 @@ public partial class MyCourseContext : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")
                 .HasColumnName("updated_at");
-        });
-
-        modelBuilder.Entity<UserAuthentication>(entity =>
-        {
-            entity.HasKey(e => e.AuthId).HasName("PK__UserAuth__6531B6F554305C2A");
-
-            entity.ToTable("UserAuthentication");
-
-            entity.Property(e => e.AuthId).HasColumnName("auth_id");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime")
-                .HasColumnName("created_at");
-            entity.Property(e => e.ProviderId)
-                .HasMaxLength(255)
-                .HasColumnName("provider_id");
-            entity.Property(e => e.ProviderName)
-                .HasMaxLength(50)
-                .HasColumnName("provider_name");
-            entity.Property(e => e.UpdatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime")
-                .HasColumnName("updated_at");
-            entity.Property(e => e.UserId).HasColumnName("user_id");
-
-            entity.HasOne(d => d.User).WithMany(p => p.UserAuthentications)
-                .HasForeignKey(d => d.UserId)
-                .HasConstraintName("FK__UserAuthe__user___71D1E811");
-        });
-
-        modelBuilder.Entity<UserDiscount>(entity =>
-        {
-            entity.HasKey(e => new { e.UserId, e.DiscountId }).HasName("PK__User_Dis__3265DEE0D0D6475F");
-
-            entity.ToTable("User_Discount");
-
-            entity.Property(e => e.UserId).HasColumnName("user_id");
-            entity.Property(e => e.DiscountId).HasColumnName("discount_id");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime")
-                .HasColumnName("created_at");
-            entity.Property(e => e.IsUsed)
-                .HasDefaultValue(false)
-                .HasColumnName("is_used");
-            entity.Property(e => e.UsedAt)
-                .HasColumnType("datetime")
-                .HasColumnName("used_at");
-
-            entity.HasOne(d => d.Discount).WithMany(p => p.UserDiscounts)
-                .HasForeignKey(d => d.DiscountId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__User_Disc__disco__5CA1C101");
-
-            entity.HasOne(d => d.User).WithMany(p => p.UserDiscounts)
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__User_Disc__user___5BAD9CC8");
         });
 
         modelBuilder.Entity<UserToken>(entity =>

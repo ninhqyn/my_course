@@ -25,8 +25,6 @@ public partial class Payment
 
     public decimal? DiscountAmount { get; set; }
 
-    public virtual Discount? Discount { get; set; }
-
     public virtual ICollection<Enrollment> Enrollments { get; set; } = new List<Enrollment>();
 
     public virtual ICollection<PaymentDetail> PaymentDetails { get; set; } = new List<PaymentDetail>();

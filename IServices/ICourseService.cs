@@ -23,6 +23,8 @@ namespace MyCourse.IServices
         Task<List<CourseModel>> GetAllCourseByInstructorId(int instructorId);
 
         Task<bool> IsEnrollmentCourse(int userId, int courseId);
+
+        Task<bool> EnrollmentCourseFree(int userId, int courseId);
      
     }
 }
